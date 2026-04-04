@@ -2,11 +2,14 @@
   "name": "kirana-shop",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "electron": "electron electron/main.js",
+    "dist": "electron-builder"
   },
   "dependencies": {
     "@libsql/client": "^0.17.2",
@@ -23,8 +26,22 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
+    "electron": "^41.1.1",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4"
+  },
+  "build": {
+    "appId": "com.nishant.kirana",
+    "productName": "Kirana Shop",
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
