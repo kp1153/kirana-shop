@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { createSessionCookie } from "@/lib/session";
 import { cookies } from "next/headers";
 
+const DEVELOPER_EMAIL = "prasad.kamta@gmail.com";
+
 export async function GET(request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -15,7 +17,7 @@ export async function GET(request) {
   const codeVerifier = cookieStore.get("google_code_verifier")?.value;
 
   if (!code || !state || state !== savedState || !codeVerifier) {
-    return new Response("गलत request", { status: 400 });
+    return new Response("Invalid request", { status: 400 });
   }
 
   const tokens = await googleClient.validateAuthorizationCode(code, codeVerifier);
@@ -25,6 +27,16 @@ export async function GET(request) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const googleUser = await googleRes.json();
+
+  if (googleUser.email === DEVELOPER_EMAIL) {
+    await createSessionCookie({
+      email: googleUser.email,
+      name: googleUser.name,
+      picture: googleUser.picture,
+      userId: 0,
+    });
+    return Response.redirect(new URL("/dashboard", "https://kirana-shop-two.vercel.app"));
+  }
 
   const existing = await db.select().from(googleUsers).where(eq(googleUsers.googleId, googleUser.id)).limit(1);
 
@@ -50,11 +62,15 @@ export async function GET(request) {
     }
   }
 
+  const userRow = await db.select().from(users).where(eq(users.email, googleUser.email)).limit(1);
+  const userId = userRow[0]?.id ?? null;
+
   await createSessionCookie({
     email: googleUser.email,
     name: googleUser.name,
     picture: googleUser.picture,
+    userId,
   });
 
-  return Response.redirect(new URL("/dashboard", process.env.NEXT_PUBLIC_BASE_URL));
+  return Response.redirect(new URL("/dashboard", "https://kirana-shop-two.vercel.app"));
 }

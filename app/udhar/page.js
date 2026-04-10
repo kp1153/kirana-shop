@@ -12,12 +12,21 @@ export default async function UdharPage() {
   const total = udharCustomers.reduce((s, c) => s + c.udhar, 0);
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap'); * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }`}</style>
+    <main style={{ minHeight: "100vh", background: "#f0fdf4", paddingBottom: "72px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap');
+        * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14532d; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; z-index: 50; }
+        .bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; opacity: 0.75; }
+        .bnav-btn.active { opacity: 1; }
+        .bnav-icon { font-size: 22px; }
+      `}</style>
+
       <div style={{ background: "#14532d", color: "#fff", padding: "12px 20px", display: "flex", alignItems: "center", gap: "12px", position: "sticky", top: 0, zIndex: 50 }}>
         <a href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontSize: "20px" }}>←</a>
         <span style={{ fontSize: "18px", fontWeight: "800" }}>💰 उधारी</span>
       </div>
+
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
         <div style={{ background: "#dc2626", borderRadius: "16px", padding: "20px", marginBottom: "16px", color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div><div style={{ fontSize: "14px", opacity: 0.9 }}>कुल बकाया</div><div style={{ fontSize: "32px", fontWeight: "800" }}>₹{total.toLocaleString("hi-IN")}</div></div>
@@ -53,6 +62,15 @@ export default async function UdharPage() {
           ))
         )}
       </div>
+
+      <nav className="bottom-nav">
+        <a href="/dashboard" className="bnav-btn"><span className="bnav-icon">🏠</span>होम</a>
+        <a href="/billing" className="bnav-btn"><span className="bnav-icon">🧾</span>बिल</a>
+        <a href="/items" className="bnav-btn"><span className="bnav-icon">📦</span>सामान</a>
+        <a href="/udhar" className="bnav-btn active"><span className="bnav-icon">💰</span>उधारी</a>
+        <a href="/settings" className="bnav-btn"><span className="bnav-icon">⚙️</span>Settings</a>
+      </nav>
+
     </main>
   );
 }

@@ -32,8 +32,16 @@ export default async function ReportsPage() {
   const maxSale = Math.max(...last7.map(d => d.sale), 1);
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap'); * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }`}</style>
+    <main style={{ minHeight: "100vh", background: "#f0fdf4", paddingBottom: "72px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap');
+        * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14532d; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; z-index: 50; }
+        .bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; opacity: 0.75; }
+        .bnav-btn.active { opacity: 1; }
+        .bnav-icon { font-size: 22px; }
+      `}</style>
+
       <div style={{ background: "#14532d", color: "#fff", padding: "12px 20px", display: "flex", alignItems: "center", gap: "12px", position: "sticky", top: 0, zIndex: 50 }}>
         <a href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontSize: "20px" }}>←</a>
         <span style={{ fontSize: "18px", fontWeight: "800" }}>📊 रिपोर्ट</span>
@@ -88,6 +96,15 @@ export default async function ReportsPage() {
         </div>
 
       </div>
+
+      <nav className="bottom-nav">
+        <a href="/dashboard" className="bnav-btn"><span className="bnav-icon">🏠</span>होम</a>
+        <a href="/billing" className="bnav-btn"><span className="bnav-icon">🧾</span>बिल</a>
+        <a href="/items" className="bnav-btn"><span className="bnav-icon">📦</span>सामान</a>
+        <a href="/udhar" className="bnav-btn"><span className="bnav-icon">💰</span>उधारी</a>
+        <a href="/settings" className="bnav-btn"><span className="bnav-icon">⚙️</span>Settings</a>
+      </nav>
+
     </main>
   );
 }

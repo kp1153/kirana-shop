@@ -55,19 +55,28 @@ export default function PurchasePage() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap'); * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }`}</style>
+    <main style={{ minHeight: "100vh", background: "#f0fdf4", paddingBottom: "72px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap');
+        * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14532d; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; z-index: 50; }
+        .bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; opacity: 0.75; }
+        .bnav-btn.active { opacity: 1; }
+        .bnav-icon { font-size: 22px; }
+      `}</style>
+
       <div style={{ background: "#14532d", color: "#fff", padding: "12px 20px", display: "flex", alignItems: "center", gap: "12px", position: "sticky", top: 0, zIndex: 50 }}>
         <a href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontSize: "20px" }}>←</a>
         <span style={{ fontSize: "18px", fontWeight: "800" }}>🚚 खरीद दर्ज करो</span>
       </div>
+
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
 
-        <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", display: "flex", gap: "10px" }}>
+        <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
           <input placeholder="Supplier का नाम" value={supplier} onChange={e => setSupplier(e.target.value)}
-            style={{ flex: 1, padding: "10px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
+            style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
           <input placeholder="Invoice No." value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)}
-            style={{ flex: 1, padding: "10px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
+            style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
         </div>
 
         <div style={{ position: "relative", marginBottom: "16px" }}>
@@ -89,7 +98,7 @@ export default function PurchasePage() {
         {cart.map(item => (
           <div key={item.itemId} style={{ background: "#fff", borderRadius: "14px", padding: "14px", marginBottom: "8px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
             <div style={{ fontWeight: "700", fontSize: "15px", marginBottom: "10px" }}>{item.name}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               <div>
                 <label style={{ fontSize: "11px", color: "#6b7280", display: "block", marginBottom: "3px" }}>मात्रा</label>
                 <input type="number" value={item.qty} onChange={e => updateCart(item.itemId, "qty", parseFloat(e.target.value) || 0)}
@@ -100,7 +109,7 @@ export default function PurchasePage() {
                 <input type="number" value={item.purchasePrice} onChange={e => updateCart(item.itemId, "purchasePrice", parseFloat(e.target.value) || 0)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
               </div>
-              <div>
+              <div style={{ gridColumn: "1 / -1" }}>
                 <label style={{ fontSize: "11px", color: "#6b7280", display: "block", marginBottom: "3px" }}>Expiry</label>
                 <input type="date" value={item.expiry} onChange={e => updateCart(item.itemId, "expiry", e.target.value)}
                   style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "14px", outline: "none" }} />
@@ -129,6 +138,15 @@ export default function PurchasePage() {
           </div>
         )}
       </div>
+
+      <nav className="bottom-nav">
+        <a href="/dashboard" className="bnav-btn"><span className="bnav-icon">🏠</span>होम</a>
+        <a href="/billing" className="bnav-btn"><span className="bnav-icon">🧾</span>बिल</a>
+        <a href="/items" className="bnav-btn"><span className="bnav-icon">📦</span>सामान</a>
+        <a href="/udhar" className="bnav-btn"><span className="bnav-icon">💰</span>उधारी</a>
+        <a href="/settings" className="bnav-btn"><span className="bnav-icon">⚙️</span>Settings</a>
+      </nav>
+
     </main>
   );
 }

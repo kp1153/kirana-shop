@@ -7,7 +7,7 @@ function createWindow() {
     icon: __dirname + "/../public/icon.ico",
     webPreferences: { nodeIntegration: false },
   });
-  win.loadURL("https://ration-pro.vercel.app");
+  win.loadURL("https://kirana-shop-two.vercel.app");
   win.setMenuBarVisibility(false);
 }
 

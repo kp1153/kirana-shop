@@ -26,7 +26,7 @@ export default async function Dashboard() {
   const monthSale = monthBills.reduce((s, b) => s + b.total, 0);
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
+    <main style={{ minHeight: "100vh", background: "#f0fdf4", paddingBottom: "72px" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }
@@ -40,6 +40,10 @@ export default async function Dashboard() {
         .section-title { font-size: 18px; font-weight: 700; color: #14532d; margin: 0 0 12px; }
         .alert-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
         .bill-row { background: #fff; border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14532d; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; z-index: 50; }
+        .bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; opacity: 0.75; }
+        .bnav-btn.active { opacity: 1; }
+        .bnav-icon { font-size: 22px; }
       `}</style>
 
       <div className="topbar">
@@ -72,15 +76,15 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Nav */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
+        {/* Quick Nav — grid-cols-2 mobile, grid-cols-4 desktop */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginBottom: "12px" }}>
           <Link href="/billing" className="nav-btn"><span className="nav-icon">🧾</span>बिल बनाओ</Link>
           <Link href="/items" className="nav-btn"><span className="nav-icon">📦</span>सामान</Link>
           <Link href="/customers" className="nav-btn"><span className="nav-icon">👥</span>ग्राहक</Link>
           <Link href="/reports" className="nav-btn"><span className="nav-icon">📊</span>रिपोर्ट</Link>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginBottom: "24px" }}>
           <Link href="/purchase" className="nav-btn"><span className="nav-icon">🚚</span>खरीद</Link>
           <Link href="/udhar" className="nav-btn"><span className="nav-icon">💰</span>उधारी</Link>
           <Link href="/settings" className="nav-btn"><span className="nav-icon">⚙️</span>Settings</Link>
@@ -131,6 +135,16 @@ export default async function Dashboard() {
         </div>
 
       </div>
+
+      {/* Bottom Nav */}
+      <nav className="bottom-nav">
+        <Link href="/dashboard" className="bnav-btn active"><span className="bnav-icon">🏠</span>होम</Link>
+        <Link href="/billing" className="bnav-btn"><span className="bnav-icon">🧾</span>बिल</Link>
+        <Link href="/items" className="bnav-btn"><span className="bnav-icon">📦</span>सामान</Link>
+        <Link href="/udhar" className="bnav-btn"><span className="bnav-icon">💰</span>उधारी</Link>
+        <Link href="/settings" className="bnav-btn"><span className="bnav-icon">⚙️</span>Settings</Link>
+      </nav>
+
     </main>
   );
 }

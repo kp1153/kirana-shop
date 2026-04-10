@@ -14,7 +14,7 @@ export default async function ItemsPage() {
   const lowStock = allItems.filter(i => i.active && i.stock <= i.minStock);
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
+    <main style={{ minHeight: "100vh", background: "#f0fdf4", paddingBottom: "72px" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap');
         * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }
@@ -22,6 +22,10 @@ export default async function ItemsPage() {
         .item-row { background: #fff; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
         .cat-badge { background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
         .low-badge { background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #14532d; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; z-index: 50; }
+        .bnav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; opacity: 0.75; }
+        .bnav-btn.active { opacity: 1; }
+        .bnav-icon { font-size: 22px; }
       `}</style>
 
       <div className="topbar">
@@ -78,6 +82,15 @@ export default async function ItemsPage() {
           })
         )}
       </div>
+
+      <nav className="bottom-nav">
+        <a href="/dashboard" className="bnav-btn"><span className="bnav-icon">🏠</span>होम</a>
+        <a href="/billing" className="bnav-btn"><span className="bnav-icon">🧾</span>बिल</a>
+        <a href="/items" className="bnav-btn active"><span className="bnav-icon">📦</span>सामान</a>
+        <a href="/udhar" className="bnav-btn"><span className="bnav-icon">💰</span>उधारी</a>
+        <a href="/settings" className="bnav-btn"><span className="bnav-icon">⚙️</span>Settings</a>
+      </nav>
+
     </main>
   );
 }
