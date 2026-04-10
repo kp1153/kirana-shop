@@ -4,6 +4,7 @@ import { googleUsers, users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { createSessionCookie } from "@/lib/session";
 import { cookies } from "next/headers";
+import { seedItemsForUser } from "@/lib/seedItems";
 
 const DEVELOPER_EMAIL = "prasad.kamta@gmail.com";
 
@@ -52,13 +53,14 @@ export async function GET(request) {
     if (userExists.length === 0) {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 7);
-      await db.insert(users).values({
+      const newUser = await db.insert(users).values({
         email: googleUser.email,
         name: googleUser.name,
         status: "trial",
         expiryDate: expiry.toISOString(),
         reminderSent: 0,
-      });
+      }).returning();
+      await seedItemsForUser(newUser[0].id);
     }
   }
 
