@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 export default function BillingPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [allItems, setAllItems] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -13,24 +15,38 @@ export default function BillingPage() {
   const [discount, setDiscount] = useState(0);
   const [paid, setPaid] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [itemsLoading, setItemsLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
-  const [custSearch, setCustSearch] = useState("");
   const searchRef = useRef(null);
 
   useEffect(() => {
-    fetch("/api/customers").then(r => r.json()).then(d => setCustomers(d.customers || []));
+    fetch("/api/customers").then(r => r.json()).then(d => setCustomers(d.customers || [])).catch(() => {});
+    setItemsLoading(true);
+    fetch("/api/items")
+      .then(r => { if (!r.ok) throw new Error("fetch failed"); return r.json(); })
+      .then(d => {
+        const active = (d.items || []).filter(i => i.active);
+        setAllItems(active);
+        setSearchResults(active.slice(0, 10));
+      })
+      .catch(e => console.error("Items load error:", e))
+      .finally(() => setItemsLoading(false));
     if (searchRef.current) searchRef.current.focus();
   }, []);
 
   useEffect(() => {
-    if (!search.trim()) { setSearchResults([]); return; }
-    const t = setTimeout(() => {
-      fetch(`/api/items?search=${encodeURIComponent(search)}`)
-        .then(r => r.json())
-        .then(d => setSearchResults((d.items || []).filter(i => i.active).slice(0, 8)));
-    }, 200);
-    return () => clearTimeout(t);
-  }, [search]);
+    if (!search.trim()) {
+      setSearchResults(allItems.slice(0, 10));
+      return;
+    }
+    const q = search.toLowerCase();
+    const filtered = allItems.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      (i.hindiName && i.hindiName.includes(search)) ||
+      (i.barcode && i.barcode.includes(search))
+    ).slice(0, 10);
+    setSearchResults(filtered);
+  }, [search, allItems]);
 
   function addToCart(item) {
     setCart(prev => {
@@ -43,7 +59,7 @@ export default function BillingPage() {
       return [...prev, { itemId: item.id, name: item.hindiName || item.name, unit: item.unit, qty: 1, mrp: item.mrp, gst: item.gst || 0, discount: 0, amount: item.mrp }];
     });
     setSearch("");
-    setSearchResults([]);
+    setShowDropdown(false);
     if (searchRef.current) searchRef.current.focus();
   }
 
@@ -92,7 +108,7 @@ export default function BillingPage() {
         .topbar { background: #14532d; color: #fff; padding: 12px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
         .search-box { flex: 1; padding: 12px 16px; border-radius: 12px; border: 2px solid #e5e7eb; font-size: 16px; outline: none; }
         .search-box:focus { border-color: #16a34a; }
-        .search-result { background: #fff; border: 1px solid #e5e7eb; border-radius: 0 0 14px 14px; position: absolute; width: 100%; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .search-result { background: #fff; border: 1px solid #e5e7eb; border-radius: 0 0 14px 14px; position: absolute; width: 100%; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 320px; overflow-y: auto; }
         .result-item { padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; }
         .result-item:hover { background: #f0fdf4; }
         .cart-item { background: #fff; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
@@ -120,20 +136,21 @@ export default function BillingPage() {
 
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
 
-        {/* Search */}
         <div style={{ position: "relative", marginBottom: "16px" }}>
           <input
             ref={searchRef}
             className="search-box"
             style={{ width: "100%" }}
-            placeholder="🔍 सामान का नाम लिखो..."
+            placeholder={itemsLoading ? "⏳ सामान लोड हो रहा है..." : "🔍 सामान का नाम लिखो या नीचे से चुनो..."}
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
-          {searchResults.length > 0 && (
+          {showDropdown && searchResults.length > 0 && (
             <div className="search-result">
               {searchResults.map(item => (
-                <div key={item.id} className="result-item" onClick={() => addToCart(item)}>
+                <div key={item.id} className="result-item" onMouseDown={() => addToCart(item)}>
                   <div>
                     <div style={{ fontWeight: "700", fontSize: "15px" }}>{item.hindiName || item.name}</div>
                     <div style={{ fontSize: "12px", color: "#6b7280" }}>{item.category} · स्टॉक: {item.stock} {item.unit}</div>
@@ -145,7 +162,6 @@ export default function BillingPage() {
           )}
         </div>
 
-        {/* Cart */}
         {cart.length === 0 ? (
           <div style={{ background: "#fff", borderRadius: "16px", padding: "40px", textAlign: "center", marginBottom: "16px" }}>
             <div style={{ fontSize: "48px", marginBottom: "8px" }}>🛒</div>
@@ -174,7 +190,6 @@ export default function BillingPage() {
 
         {cart.length > 0 && (
           <>
-            {/* Customer */}
             <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px" }}>
               <p style={{ fontWeight: "700", fontSize: "15px", margin: "0 0 10px", color: "#374151" }}>👤 ग्राहक (वैकल्पिक)</p>
               <input placeholder="ग्राहक का नाम" value={customerName} onChange={e => setCustomerName(e.target.value)}
@@ -183,7 +198,6 @@ export default function BillingPage() {
                 style={{ width: "100%", padding: "10px 14px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "15px", outline: "none" }} />
             </div>
 
-            {/* Payment */}
             <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px" }}>
               <p style={{ fontWeight: "700", fontSize: "15px", margin: "0 0 12px", color: "#374151" }}>💳 भुगतान</p>
               <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
