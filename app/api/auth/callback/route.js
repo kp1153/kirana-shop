@@ -35,7 +35,7 @@ export async function GET(request) {
       picture: googleUser.picture,
       userId: 0,
     });
-    return Response.redirect(new URL("/dashboard", "https://kirana-shop-two.vercel.app"));
+    return Response.redirect(new URL("/dashboard", "https://ration.nishantsoftwares.in"));
   }
 
   const existing = await db.select().from(googleUsers).where(eq(googleUsers.googleId, googleUser.id)).limit(1);
@@ -72,5 +72,5 @@ export async function GET(request) {
     userId,
   });
 
-  return Response.redirect(new URL("/dashboard", "https://kirana-shop-two.vercel.app"));
+  return Response.redirect(new URL("/dashboard", "https://ration.nishantsoftwares.in"));
 }
