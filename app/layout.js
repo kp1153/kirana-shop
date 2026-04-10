@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata = {
   title: "Ration Pro — Nishant Software",
   description: "राशन दुकान का पूरा हिसाब — बिल, स्टॉक, उधारी एक जगह",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }) {
