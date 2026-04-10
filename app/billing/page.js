@@ -28,6 +28,7 @@ export default function BillingPage() {
         const active = (d.items || []).filter(i => i.active);
         setAllItems(active);
         setSearchResults(active.slice(0, 10));
+        if (document.activeElement === searchRef.current) setShowDropdown(true);
       })
       .catch(e => console.error("Items load error:", e))
       .finally(() => setItemsLoading(false));
@@ -147,7 +148,7 @@ export default function BillingPage() {
             onFocus={() => setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
-          {showDropdown && searchResults.length > 0 && (
+          {showDropdown && !itemsLoading && searchResults.length > 0 && (
             <div className="search-result">
               {searchResults.map(item => (
                 <div key={item.id} className="result-item" onMouseDown={() => addToCart(item)}>
