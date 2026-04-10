@@ -21,12 +21,18 @@ export async function GET(request) {
     return new Response("Invalid request", { status: 400 });
   }
 
-  const tokens = await googleClient.validateAuthorizationCode(code, codeVerifier);
+  const tokens = await googleClient.validateAuthorizationCode(
+    code,
+    codeVerifier,
+  );
   const accessToken = tokens.accessToken();
 
-  const googleRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const googleRes = await fetch(
+    "https://www.googleapis.com/oauth2/v2/userinfo",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
   const googleUser = await googleRes.json();
 
   if (googleUser.email === DEVELOPER_EMAIL) {
@@ -36,10 +42,16 @@ export async function GET(request) {
       picture: googleUser.picture,
       userId: 0,
     });
-    return Response.redirect(new URL("/dashboard", "https://ration.nishantsoftwares.in"));
+    return Response.redirect(
+      new URL("/dashboard", process.env.NEXT_PUBLIC_BASE_URL),
+    );
   }
 
-  const existing = await db.select().from(googleUsers).where(eq(googleUsers.googleId, googleUser.id)).limit(1);
+  const existing = await db
+    .select()
+    .from(googleUsers)
+    .where(eq(googleUsers.googleId, googleUser.id))
+    .limit(1);
 
   if (existing.length === 0) {
     await db.insert(googleUsers).values({
@@ -49,22 +61,33 @@ export async function GET(request) {
       picture: googleUser.picture,
     });
 
-    const userExists = await db.select().from(users).where(eq(users.email, googleUser.email)).limit(1);
+    const userExists = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, googleUser.email))
+      .limit(1);
     if (userExists.length === 0) {
       const expiry = new Date();
       expiry.setDate(expiry.getDate() + 7);
-      const newUser = await db.insert(users).values({
-        email: googleUser.email,
-        name: googleUser.name,
-        status: "trial",
-        expiryDate: expiry.toISOString(),
-        reminderSent: 0,
-      }).returning();
+      const newUser = await db
+        .insert(users)
+        .values({
+          email: googleUser.email,
+          name: googleUser.name,
+          status: "trial",
+          expiryDate: expiry.toISOString(),
+          reminderSent: 0,
+        })
+        .returning();
       await seedItemsForUser(newUser[0].id);
     }
   }
 
-  const userRow = await db.select().from(users).where(eq(users.email, googleUser.email)).limit(1);
+  const userRow = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, googleUser.email))
+    .limit(1);
   const userId = userRow[0]?.id ?? null;
 
   await createSessionCookie({
@@ -74,5 +97,7 @@ export async function GET(request) {
     userId,
   });
 
-  return Response.redirect(new URL("/dashboard", "https://ration.nishantsoftwares.in"));
+  return Response.redirect(
+    new URL("/dashboard", process.env.NEXT_PUBLIC_BASE_URL),
+  );
 }
