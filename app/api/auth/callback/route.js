@@ -1,6 +1,6 @@
 import { googleClient } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { googleUsers, users } from "@/lib/schema";
+import { googleUsers, users, preActivations } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { createSessionCookie } from "@/lib/session";
 import { cookies } from "next/headers";
@@ -8,6 +8,20 @@ import { seedItemsForUser } from "@/lib/seedItems";
 import { NextResponse } from "next/server";
 
 const DEVELOPER_EMAIL = "prasad.kamta@gmail.com";
+
+function redirectWithCookie(path, token) {
+  const res = NextResponse.redirect(
+    new URL(path, process.env.NEXT_PUBLIC_BASE_URL),
+  );
+  res.cookies.set("ration_session", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  });
+  return res;
+}
 
 export async function GET(request) {
   const url = new URL(request.url);
@@ -36,87 +50,120 @@ export async function GET(request) {
   );
   const googleUser = await googleRes.json();
 
+  // Developer whitelist
   if (googleUser.email === DEVELOPER_EMAIL) {
-    let devUser = await db
+    const devUser = await db
       .select()
       .from(users)
       .where(eq(users.email, googleUser.email))
       .limit(1);
+
+    let devUserId;
     if (devUser.length === 0) {
-      const newUser = await db
-        .insert(users)
-        .values({
-          email: googleUser.email,
-          name: googleUser.name,
-          status: "active",
-          expiryDate: new Date("2099-12-31").toISOString(),
-          reminderSent: 0,
-        })
-        .returning();
-      await seedItemsForUser(newUser[0].id);
-      devUser = [newUser[0]];
+      await db.insert(users).values({
+        email: googleUser.email,
+        name: googleUser.name,
+        status: "active",
+        expiryDate: new Date("2099-12-31").toISOString(),
+        reminderSent: 0,
+      });
+      const fetched = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, googleUser.email))
+        .limit(1);
+      devUserId = fetched[0].id;
+      await seedItemsForUser(devUserId);
+    } else {
+      devUserId = devUser[0].id;
     }
+
     const token = await createSessionCookie({
       email: googleUser.email,
       name: googleUser.name,
       picture: googleUser.picture,
-      userId: devUser[0].id,
+      userId: devUserId,
     });
-    const res = NextResponse.redirect(
-      new URL("/dashboard", process.env.NEXT_PUBLIC_BASE_URL),
-    );
-    res.cookies.set("ration_session", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-    return res;
+    return redirectWithCookie("/dashboard", token);
   }
 
-  const existing = await db
+  // Google users record (login history)
+  const existingGoogle = await db
     .select()
     .from(googleUsers)
     .where(eq(googleUsers.googleId, googleUser.id))
     .limit(1);
 
-  if (existing.length === 0) {
+  if (existingGoogle.length === 0) {
     await db.insert(googleUsers).values({
       googleId: googleUser.id,
       email: googleUser.email,
       name: googleUser.name,
       picture: googleUser.picture,
     });
-
-    const userExists = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, googleUser.email))
-      .limit(1);
-    if (userExists.length === 0) {
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 7);
-      const newUser = await db
-        .insert(users)
-        .values({
-          email: googleUser.email,
-          name: googleUser.name,
-          status: "trial",
-          expiryDate: expiry.toISOString(),
-          reminderSent: 0,
-        })
-        .returning();
-      await seedItemsForUser(newUser[0].id);
-    }
   }
 
-  const userRow = await db
+  // Users table entry
+  let userRow = await db
     .select()
     .from(users)
     .where(eq(users.email, googleUser.email))
     .limit(1);
+
+  if (userRow.length === 0) {
+    // Check pre_activations (payment-first flow)
+    const preAct = await db
+      .select()
+      .from(preActivations)
+      .where(eq(preActivations.email, googleUser.email))
+      .limit(1);
+
+    if (preAct.length > 0) {
+      const m = preAct[0].months || 12;
+      const expiry = new Date();
+      expiry.setMonth(expiry.getMonth() + m);
+
+      await db.insert(users).values({
+        email: googleUser.email,
+        name: googleUser.name,
+        status: "active",
+        expiryDate: expiry.toISOString(),
+        reminderSent: 0,
+      });
+
+      await db
+        .delete(preActivations)
+        .where(eq(preActivations.email, googleUser.email));
+    } else {
+      // New trial — 7 days
+      const expiry = new Date();
+      expiry.setDate(expiry.getDate() + 7);
+      await db.insert(users).values({
+        email: googleUser.email,
+        name: googleUser.name,
+        status: "trial",
+        expiryDate: expiry.toISOString(),
+        reminderSent: 0,
+      });
+    }
+
+    userRow = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, googleUser.email))
+      .limit(1);
+
+    await seedItemsForUser(userRow[0].id);
+  }
+
   const userId = userRow[0]?.id ?? null;
+
+  // Expiry check before redirect
+  const u = userRow[0];
+  const now = new Date();
+  const expiry = u?.expiryDate ? new Date(u.expiryDate) : null;
+  const isActive = u?.status === "active" && expiry && expiry > now;
+  const isTrial = u?.status === "trial" && expiry && expiry > now;
 
   const token = await createSessionCookie({
     email: googleUser.email,
@@ -124,15 +171,10 @@ export async function GET(request) {
     picture: googleUser.picture,
     userId,
   });
-  const res = NextResponse.redirect(
-    new URL("/dashboard", process.env.NEXT_PUBLIC_BASE_URL),
-  );
-  res.cookies.set("ration_session", token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  });
-  return res;
+
+  if (!isActive && !isTrial) {
+    return redirectWithCookie("/expired", token);
+  }
+
+  return redirectWithCookie("/dashboard", token);
 }
