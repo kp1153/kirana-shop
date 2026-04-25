@@ -4,7 +4,6 @@ import { googleUsers, users, preActivations } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { createSessionCookie } from "@/lib/session";
 import { cookies } from "next/headers";
-import { seedItemsForUser } from "@/lib/seedItems";
 import { NextResponse } from "next/server";
 
 const DEVELOPER_EMAIL = "prasad.kamta@gmail.com";
@@ -73,7 +72,6 @@ export async function GET(request) {
         .where(eq(users.email, googleUser.email))
         .limit(1);
       devUserId = fetched[0].id;
-      await seedItemsForUser(devUserId);
     } else {
       devUserId = devUser[0].id;
     }
@@ -152,8 +150,6 @@ export async function GET(request) {
       .from(users)
       .where(eq(users.email, googleUser.email))
       .limit(1);
-
-    await seedItemsForUser(userRow[0].id);
   }
 
   const userId = userRow[0]?.id ?? null;
