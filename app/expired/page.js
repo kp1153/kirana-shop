@@ -18,9 +18,9 @@ export default function ExpiredPage() {
         <div style={{ background: "#f0fdf4", borderRadius: "16px", padding: "20px", marginBottom: "24px" }}>
           <p style={{ color: "#6b7280", fontSize: "13px", margin: "0 0 4px" }}>Ration Pro License</p>
           <p style={{ fontSize: "36px", fontWeight: "800", color: "#15803d", margin: "0 0 4px" }}>₹3,999 <span style={{ fontSize: "14px", fontWeight: "400", color: "#9ca3af" }}>/साल</span></p>
-          <p style={{ color: "#9ca3af", fontSize: "12px", margin: 0 }}>Renewal: ₹1,499/साल</p>
+          <p style={{ color: "#9ca3af", fontSize: "12px", margin: 0 }}>Renewal: ₹2500/साल</p>
         </div>
-        <a href="https://www.web-developer-kp.com/payment?software=ration" className="btn-green">License खरीदें — ₹3,999</a>
+        <a href="https://www.nishantsoftwares.in/payment?software=ration" className="btn-green">License खरीदें — ₹4,999</a>
         <a href="https://wa.me/919996865069" target="_blank" rel="noopener noreferrer" className="btn-wa">💬 WhatsApp पर बात करें</a>
         <Link href="/login" style={{ color: "#9ca3af", fontSize: "13px" }}>Login page पर जाएं</Link>
       </div>
