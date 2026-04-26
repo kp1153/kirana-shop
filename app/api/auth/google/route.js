@@ -16,12 +16,14 @@ export async function GET() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 10,
+    path: "/",
   });
   cookieStore.set("google_code_verifier", codeVerifier, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 10,
+    path: "/",
   });
 
   return Response.redirect(url);
