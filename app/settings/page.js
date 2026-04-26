@@ -1,90 +1,80 @@
-import { db } from "@/lib/db";
-import { bills, items, customers, udharLedger, billItems } from "@/lib/schema";
-import { eq, and } from "drizzle-orm";
-import { getSession } from "@/lib/session";
+"use client";
+import { useState, useEffect } from "react";
 
-export async function GET(request) {
-  const session = await getSession();
-  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+export default function SettingsPage() {
+  const [form, setForm] = useState({ shopName: "", ownerName: "", phone: "", address: "", gstin: "", upiId: "", thankYouMsg: "धन्यवाद! फिर आइएगा।" });
+  const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type") || "bills";
+  useEffect(() => {
+    fetch("/api/settings").then(r => r.json()).then(d => { if (d.settings) setForm(s => ({...s, ...d.settings})); });
+  }, []);
 
-  let rows = [];
-  let headers = [];
-  let filename = "export.csv";
-
-  if (type === "items") {
-    const data = await db.select().from(items).where(eq(items.userId, session.userId));
-    headers = ["ID", "नाम", "हिंदी नाम", "कैटेगरी", "Brand", "Unit", "MRP", "खरीद भाव", "स्टॉक", "GST%", "HSN", "Barcode", "Expiry"];
-    rows = data.map(i => [i.id, i.name, i.hindiName || "", i.category, i.brand || "", i.unit || "", i.mrp, i.purchasePrice || "", i.stock, i.gst || 0, i.hsn || "", i.barcode || "", i.expiry || ""]);
-    filename = `items-${today()}.csv`;
-  } else if (type === "customers") {
-    const data = await db.select().from(customers).where(eq(customers.userId, session.userId));
-    headers = ["ID", "नाम", "Phone", "पता", "उधार", "जुड़े"];
-    rows = data.map(c => [c.id, c.name, c.phone || "", c.address || "", c.udhar || 0, c.createdAt || ""]);
-    filename = `customers-${today()}.csv`;
-  } else if (type === "udhar") {
-    const data = await db.select().from(udharLedger).where(eq(udharLedger.userId, session.userId));
-    const cs = await db.select().from(customers).where(eq(customers.userId, session.userId));
-    const map = new Map(cs.map(c => [c.id, c.name]));
-    headers = ["ID", "ग्राहक", "प्रकार", "रकम", "नोट", "तारीख"];
-    rows = data.map(l => [l.id, map.get(l.customerId) || "", l.type === "debit" ? "उधार" : "जमा", l.amount, l.note || "", l.createdAt || ""]);
-    filename = `udhar-${today()}.csv`;
-  } else if (type === "bills-detailed") {
-    const data = await db.select().from(bills).where(eq(bills.userId, session.userId));
-    const billIds = data.map(b => b.id);
-    const itemsRaw = billIds.length ? await db.select().from(billItems) : [];
-    const itemsByBill = new Map();
-    for (const it of itemsRaw) {
-      if (!billIds.includes(it.billId)) continue;
-      const arr = itemsByBill.get(it.billId) || [];
-      arr.push(it);
-      itemsByBill.set(it.billId, arr);
-    }
-    headers = ["बिल नं", "तारीख", "ग्राहक", "Phone", "सामान", "मात्रा", "दर", "रकम", "बिल कुल", "भुगतान", "बकाया", "तरीका"];
-    for (const b of data) {
-      const list = itemsByBill.get(b.id) || [];
-      if (list.length === 0) {
-        rows.push([b.billNo, b.createdAt, b.customerName || "", b.customerPhone || "", "", "", "", "", b.total, b.paid, b.total - b.paid, b.paymentMode]);
-      } else {
-        for (const it of list) {
-          rows.push([b.billNo, b.createdAt, b.customerName || "", b.customerPhone || "", it.itemName, it.qty, it.mrp, it.amount, b.total, b.paid, b.total - b.paid, b.paymentMode]);
-        }
-      }
-    }
-    filename = `bills-detailed-${today()}.csv`;
-  } else {
-    const data = await db.select().from(bills).where(eq(bills.userId, session.userId));
-    headers = ["बिल नं", "तारीख", "ग्राहक", "Phone", "Subtotal", "Discount", "कुल", "भुगतान", "बकाया", "तरीका"];
-    rows = data.map(b => [b.billNo, b.createdAt, b.customerName || "", b.customerPhone || "", b.subtotal, b.discount || 0, b.total, b.paid, b.total - b.paid, b.paymentMode]);
-    filename = `bills-${today()}.csv`;
+  async function handleSave() {
+    setLoading(true);
+    await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    setLoading(false); setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
-  const csv = toCSV(headers, rows);
-  const bom = "\uFEFF";
-  return new Response(bom + csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-    },
-  });
+  const inputStyle = { width: "100%", padding: "12px 14px", borderRadius: "12px", border: "1.5px solid #e5e7eb", fontSize: "15px", outline: "none", fontFamily: "'Baloo 2', sans-serif" };
+  const labelStyle = { fontSize: "13px", color: "#6b7280", display: "block", marginBottom: "4px", fontWeight: "600" };
+
+  return (
+    <main style={{ minHeight: "100vh", background: "#f0fdf4" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&display=swap'); * { font-family: 'Baloo 2', sans-serif; box-sizing: border-box; }`}</style>
+      <div style={{ background: "#14532d", color: "#fff", padding: "12px 20px", display: "flex", alignItems: "center", gap: "12px", position: "sticky", top: 0, zIndex: 50 }}>
+        <a href="/dashboard" style={{ color: "#fff", textDecoration: "none", fontSize: "20px" }}>←</a>
+        <span style={{ fontSize: "18px", fontWeight: "800" }}>⚙️ दुकान Settings</span>
+      </div>
+      <div style={{ maxWidth: "500px", margin: "0 auto", padding: "16px" }}>
+        <div style={{ background: "#fff", borderRadius: "20px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          {[
+            { key: "shopName", label: "दुकान का नाम", placeholder: "जैसे: श्री राम किराना स्टोर" },
+            { key: "ownerName", label: "मालिक का नाम", placeholder: "आपका नाम" },
+            { key: "phone", label: "फोन नंबर", placeholder: "10 अंक का नंबर" },
+            { key: "address", label: "पता", placeholder: "दुकान का पूरा पता" },
+            { key: "gstin", label: "GSTIN (वैकल्पिक)", placeholder: "GST नंबर" },
+            { key: "upiId", label: "UPI ID", placeholder: "yourname@upi" },
+            { key: "thankYouMsg", label: "बिल पर संदेश", placeholder: "धन्यवाद! फिर आइएगा।" },
+          ].map(f => (
+            <div key={f.key}>
+              <label style={labelStyle}>{f.label}</label>
+              <input style={inputStyle} placeholder={f.placeholder} value={form[f.key] || ""} onChange={e => setForm({...form, [f.key]: e.target.value})} />
+            </div>
+          ))}
+          <button onClick={handleSave} disabled={loading}
+            style={{ background: saved ? "#16a34a" : "linear-gradient(135deg, #16a34a, #15803d)", color: "#fff", padding: "14px", borderRadius: "14px", fontSize: "16px", fontWeight: "800", border: "none", cursor: "pointer" }}>
+            {loading ? "Save हो रहा है..." : saved ? "✅ Save हो गया!" : "✅ Save करो"}
+          </button>
+        </div>
+
+        <div style={{ background: "#fff", borderRadius: "20px", padding: "20px", marginTop: "16px" }}>
+          <p style={{ fontWeight: "800", fontSize: "16px", color: "#14532d", margin: "0 0 4px" }}>📥 Backup / Excel में निकालो</p>
+          <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 14px" }}>नीचे से कोई भी फ़ाइल download करो — Excel/Google Sheets में खुलेगी</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <a href="/api/export?type=bills" download style={btnStyle}>🧾 सभी बिल</a>
+            <a href="/api/export?type=bills-detailed" download style={btnStyle}>📋 बिल + सामान</a>
+            <a href="/api/export?type=items" download style={btnStyle}>📦 सामान</a>
+            <a href="/api/export?type=customers" download style={btnStyle}>👥 ग्राहक</a>
+            <a href="/api/export?type=udhar" download style={{ ...btnStyle, gridColumn: "span 2" }}>💰 उधारी का हिसाब</a>
+          </div>
+          <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "10px", textAlign: "center" }}>आपका data हमेशा आपका — कभी भी निकालो</p>
+        </div>
+      </div>
+    </main>
+  );
 }
 
-function toCSV(headers, rows) {
-  const esc = (v) => {
-    if (v === null || v === undefined) return "";
-    const s = String(v);
-    if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-      return `"${s.replace(/"/g, '""')}"`;
-    }
-    return s;
-  };
-  const lines = [headers.map(esc).join(",")];
-  for (const r of rows) lines.push(r.map(esc).join(","));
-  return lines.join("\n");
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
+const btnStyle = {
+  background: "#dcfce7",
+  color: "#14532d",
+  padding: "12px",
+  borderRadius: "12px",
+  textDecoration: "none",
+  fontWeight: "700",
+  fontSize: "14px",
+  textAlign: "center",
+  border: "1.5px solid #86efac",
+  display: "block",
+};
