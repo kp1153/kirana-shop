@@ -45,23 +45,19 @@ export default async function CustomersPage() {
           </div>
         ) : (
           all.map(c => (
-            <div key={c.id} style={{ background: "#fff", borderRadius: "14px", padding: "14px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-              <div>
-                <div style={{ fontWeight: "700", fontSize: "16px" }}>{c.name}</div>
-                <div style={{ fontSize: "13px", color: "#6b7280" }}>{c.phone || "नंबर नहीं"} · {c.address || ""}</div>
+            <Link key={c.id} href={`/customers/${c.id}`} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+              <div style={{ background: "#fff", borderRadius: "14px", padding: "14px 16px", marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                <div>
+                  <div style={{ fontWeight: "700", fontSize: "16px" }}>{c.name}</div>
+                  <div style={{ fontSize: "13px", color: "#6b7280" }}>{c.phone || "नंबर नहीं"} · {c.address || ""}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  {c.udhar > 0 && <div style={{ fontWeight: "800", color: "#dc2626", fontSize: "16px" }}>₹{c.udhar.toLocaleString("hi-IN")}</div>}
+                  {c.udhar > 0 && <div style={{ fontSize: "11px", color: "#6b7280" }}>उधार</div>}
+                  <div style={{ fontSize: "11px", color: "#16a34a", marginTop: "2px" }}>देखें →</div>
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                {c.udhar > 0 && <div style={{ fontWeight: "800", color: "#dc2626", fontSize: "16px" }}>₹{c.udhar.toLocaleString("hi-IN")}</div>}
-                {c.udhar > 0 && <div style={{ fontSize: "11px", color: "#6b7280" }}>उधार</div>}
-                {c.phone && (
-                  <a href={`https://wa.me/91${c.phone}?text=नमस्ते ${c.name} जी, आपका ₹${c.udhar} उधार बाकी है।`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: "11px", color: "#16a34a", textDecoration: "none" }}>
-                    💬 WhatsApp
-                  </a>
-                )}
-              </div>
-            </div>
+            </Link>
           ))
         )}
       </div>

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { bills, billItems, items, customers, udharLedger } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getSession } from "@/lib/session";
 
 export async function GET(request) {
@@ -21,20 +21,45 @@ export async function POST(request) {
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
-  const { customerId, customerName, customerPhone, items: cartItems, discount, paymentMode, paid } = body;
+  const { customerId: bodyCustomerId, customerName, customerPhone, items: cartItems, discount, paymentMode, paid } = body;
 
   if (!cartItems || cartItems.length === 0) {
     return Response.json({ error: "कोई सामान नहीं है" }, { status: 400 });
   }
 
+  // Auto-link customer by phone if not explicitly given
+  let customerId = bodyCustomerId || null;
+  if (!customerId && customerPhone) {
+    const existing = await db.select().from(customers)
+      .where(eq(customers.userId, session.userId)).limit(500);
+    const match = existing.find(c => (c.phone || "").replace(/\D/g, "") === customerPhone.replace(/\D/g, ""));
+    if (match) {
+      customerId = match.id;
+    } else if (customerName && customerName !== "नकद ग्राहक") {
+      // Auto-create customer for repeat lookup
+      await db.insert(customers).values({
+        userId: session.userId,
+        name: customerName,
+        phone: customerPhone,
+        udhar: 0,
+      });
+      // Re-fetch since we don't use .returning() (Turso/LibSQL incompatibility)
+      const fresh = await db.select().from(customers)
+        .where(and(eq(customers.userId, session.userId), eq(customers.phone, customerPhone)))
+        .limit(1);
+      if (fresh[0]) customerId = fresh[0].id;
+    }
+  }
+
   const subtotal = cartItems.reduce((s, i) => s + i.amount, 0);
-  const gstAmount = cartItems.reduce((s, i) => s + (i.amount * (i.gst || 0) / 100), 0);
-  const total = subtotal - (discount || 0) + gstAmount;
+  // GST is INCLUSIVE in MRP (Indian retail standard) — extract for reporting only, do NOT add to total
+  const gstAmount = cartItems.reduce((s, i) => s + ((i.amount * (i.gst || 0)) / (100 + (i.gst || 0))), 0);
+  const total = subtotal - (discount || 0);
   const paidAmount = paid || 0;
 
   const billNo = "BILL-" + Date.now();
 
-  const insertedBill = await db.insert(bills).values({
+  await db.insert(bills).values({
     userId: session.userId,
     customerId: customerId || null,
     customerName: customerName || "नकद ग्राहक",
@@ -46,9 +71,13 @@ export async function POST(request) {
     total,
     paid: paidAmount,
     paymentMode: paymentMode || "cash",
-  }).returning();
+  });
 
-  const billId = insertedBill[0].id;
+  // Re-fetch the just-inserted bill (Turso/LibSQL .returning() incompatibility)
+  const insertedBillRows = await db.select().from(bills)
+    .where(and(eq(bills.userId, session.userId), eq(bills.billNo, billNo))).limit(1);
+  const insertedBill = insertedBillRows[0];
+  const billId = insertedBill.id;
 
   for (const item of cartItems) {
     await db.insert(billItems).values({
@@ -90,5 +119,5 @@ export async function POST(request) {
     }
   }
 
-  return Response.json({ bill: insertedBill[0] });
+  return Response.json({ bill: insertedBill });
 }

@@ -17,6 +17,7 @@
     "dotenv": "^17.4.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
+    "html5-qrcode": "^2.3.8",
     "jose": "^6.2.2",
     "next": "16.2.2",
     "nodemailer": "^8.0.4",

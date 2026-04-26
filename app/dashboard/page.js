@@ -87,6 +87,7 @@ export default async function Dashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px", marginBottom: "24px" }}>
           <Link href="/purchase" className="nav-btn"><span className="nav-icon">🚚</span>खरीद</Link>
           <Link href="/udhar" className="nav-btn"><span className="nav-icon">💰</span>उधारी</Link>
+          <Link href="/day-end" className="nav-btn"><span className="nav-icon">🔒</span>दिन का हिसाब</Link>
           <Link href="/settings" className="nav-btn"><span className="nav-icon">⚙️</span>Settings</Link>
         </div>
 
@@ -120,7 +121,7 @@ export default async function Dashboard() {
             </div>
           ) : (
             todayBills.slice(0, 10).map(b => (
-              <div key={b.id} className="bill-row">
+              <Link key={b.id} href={`/bills/${b.id}`} className="bill-row" style={{ textDecoration: "none", color: "inherit" }}>
                 <div>
                   <div style={{ fontWeight: "700", fontSize: "15px" }}>{b.customerName}</div>
                   <div style={{ fontSize: "13px", color: "#6b7280" }}>{b.billNo} · {b.paymentMode === "cash" ? "नकद" : b.paymentMode === "upi" ? "UPI" : "उधार"}</div>
@@ -129,7 +130,7 @@ export default async function Dashboard() {
                   <div style={{ fontWeight: "800", fontSize: "16px", color: "#14532d" }}>₹{b.total.toLocaleString("hi-IN")}</div>
                   {b.paid < b.total && <div style={{ fontSize: "12px", color: "#dc2626" }}>उधार: ₹{(b.total - b.paid).toLocaleString("hi-IN")}</div>}
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </div>

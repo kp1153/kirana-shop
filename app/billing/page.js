@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
 export default function BillingPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(false);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -77,6 +79,19 @@ export default function BillingPage() {
   const total = subtotal - (parseFloat(discount) || 0);
   const balance = total - (parseFloat(paid) || 0);
 
+  function handleBarcodeFound(code) {
+    setScannerOpen(false);
+    const match = allItems.find(i => i.barcode && i.barcode === code);
+    if (match) {
+      addToCart(match);
+    } else {
+      setSearch(code);
+      setShowDropdown(true);
+      if (searchRef.current) searchRef.current.focus();
+      alert(`इस barcode का सामान नहीं मिला: ${code}\nपहले Items में जोड़ो।`);
+    }
+  }
+
   async function saveBill() {
     if (cart.length === 0) return;
     setLoading(true);
@@ -94,9 +109,10 @@ export default function BillingPage() {
     });
     if (res.ok) {
       const data = await res.json();
-      setCart([]); setCustomerName(""); setCustomerPhone("");
-      setDiscount(0); setPaid(0); setPaymentMode("cash");
-      alert(`बिल बन गया! ${data.bill.billNo}\nकुल: ₹${total}`);
+      router.push(`/bills/${data.bill.id}`);
+      return;
+    } else {
+      alert("बिल नहीं बना — दोबारा कोशिश करो");
     }
     setLoading(false);
   }
@@ -137,19 +153,27 @@ export default function BillingPage() {
 
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "16px" }}>
 
-        <div style={{ position: "relative", marginBottom: "16px" }}>
+        <div style={{ position: "relative", marginBottom: "16px", display: "flex", gap: "8px" }}>
           <input
             ref={searchRef}
             className="search-box"
-            style={{ width: "100%" }}
+            style={{ flex: 1 }}
             placeholder={itemsLoading ? "⏳ सामान लोड हो रहा है..." : "🔍 सामान का नाम लिखो या नीचे से चुनो..."}
             value={search}
             onChange={e => setSearch(e.target.value)}
             onFocus={() => setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
+          <button
+            type="button"
+            onClick={() => setScannerOpen(true)}
+            title="Barcode स्कैन करो"
+            style={{ background: "#14532d", color: "#fff", border: "none", borderRadius: "12px", padding: "0 16px", fontSize: "20px", cursor: "pointer", fontWeight: "700" }}
+          >
+            📷
+          </button>
           {showDropdown && !itemsLoading && searchResults.length > 0 && (
-            <div className="search-result">
+            <div className="search-result" style={{ top: "100%", left: 0, right: "60px" }}>
               {searchResults.map(item => (
                 <div key={item.id} className="result-item" onMouseDown={() => addToCart(item)}>
                   <div>
@@ -162,6 +186,10 @@ export default function BillingPage() {
             </div>
           )}
         </div>
+
+        {scannerOpen && (
+          <BarcodeScanner onScan={handleBarcodeFound} onClose={() => setScannerOpen(false)} />
+        )}
 
         {cart.length === 0 ? (
           <div style={{ background: "#fff", borderRadius: "16px", padding: "40px", textAlign: "center", marginBottom: "16px" }}>
