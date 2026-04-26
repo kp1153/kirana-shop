@@ -7,7 +7,7 @@ function createWindow() {
     icon: __dirname + "/../public/icon.ico",
     webPreferences: { nodeIntegration: false },
   });
-  win.loadURL("https://kirana-shop-two.vercel.app");
+  win.loadURL("https://ration.nishantsoftwares.in");
   win.setMenuBarVisibility(false);
 }
 
